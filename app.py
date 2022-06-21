@@ -1,63 +1,64 @@
-import dash
-from dash import html
-from dash import dcc
-import plotly.graph_objs as go
+from greppo import app
+import geopandas as gpd
 
-########### Define your variables
-beers=['Chesapeake Stout', 'Snake Dog IPA', 'Imperial Porter', 'Double Dog IPA']
-ibu_values=[35, 60, 85, 75]
-abv_values=[5.4, 7.1, 9.2, 4.3]
-color1='darkred'
-color2='orange'
-mytitle='Beer Comparison'
-tabtitle='beer!'
-myheading='Flying Dog Beers'
-label1='IBU'
-label2='ABV'
-githublink='https://github.com/austinlasseter/flying-dog-beers'
-sourceurl='https://www.flyingdog.com/beers/'
-
-########### Set up the chart
-bitterness = go.Bar(
-    x=beers,
-    y=ibu_values,
-    name=label1,
-    marker={'color':color1}
-)
-alcohol = go.Bar(
-    x=beers,
-    y=abv_values,
-    name=label2,
-    marker={'color':color2}
+app.base_layer(
+    name="Open Street Map",
+    visible=True,
+    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    subdomains=None,
+    attribution='(C) OpenStreetMap contributors',
 )
 
-beer_data = [bitterness, alcohol]
-beer_layout = go.Layout(
-    barmode='group',
-    title = mytitle
+app.base_layer(provider="CartoDB Positron")
+
+regions = gpd.read_file("./regions.geojson")
+roads = gpd.read_file("./roads.geojson")
+cities = gpd.read_file("./cities.geojson")
+
+app.vector_layer(
+    data = regions,
+    name = "Regions of Italy",
+    description = "Polygons showing the boundaries of regions of Italy.",
+    style = {"fillColor": "#4daf4a"},
 )
 
-beer_fig = go.Figure(data=beer_data, layout=beer_layout)
-
-
-########### Initiate the app
-external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
-app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
-server = app.server
-app.title=tabtitle
-
-########### Set up the layout
-app.layout = html.Div(children=[
-    html.H1(myheading),
-    dcc.Graph(
-        id='flyingdog',
-        figure=beer_fig
-    ),
-    html.A('Code on Github', href=githublink),
-    html.Br(),
-    html.A('Data Source', href=sourceurl),
-    ]
+app.vector_layer(
+    data = roads,
+    name = "Highways in Italy",
+    description = "Lines showing the major highways in Italy.",
+    style = {"color": "#377eb8"},
 )
 
-if __name__ == '__main__':
-    app.run_server()
+app.vector_layer(
+    data = cities,
+    name = "Cities of Italy",
+    description = "Points showing the cities in Italy.",
+    style = {"color": "#e41a1c"},
+    visible = True,
+)
+
+app.display(name='title', value='Vector demo')
+app.display(name='description',
+            value='A Greppo demo app for vector data using GeoJSON data.')
+
+text_1 = """
+## About the web-app
+The dashboard shows the boundaries of the regions of Italy as polygons, 
+the major arterial higways as lines and the major cities of each region as points.
+"""
+
+app.display(name='text-1', value=text_1)
+
+from greppo import app
+import geopandas as gpd
+
+regions = gpd.read_file("./regions.geojson")
+roads = gpd.read_file("./roads.geojson")
+cities = gpd.read_file("./cities.geojson")
+
+app.display(name='text-2',
+            value='The following displays the count of polygons, lines and points as a barchart.')
+
+app.bar_chart(name='Geometry count', description='A bar-cart showing the count of each geometry-type in the datasets.',
+              x=['polygons', 'lines', 'points'], y=[len(regions), len(roads), len(cities)], color='#984ea3')
+              
